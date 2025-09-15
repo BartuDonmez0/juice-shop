@@ -2,9 +2,9 @@ name: Build & SBOM (Syft)
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "master" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "master" ]
 
 # SBOM'ları artifact/release olarak yükleyebilmek için izinler
 permissions:
