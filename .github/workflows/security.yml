@@ -30,3 +30,19 @@ jobs:
           image: "juice-shop:${{ github.sha }}"
           format: "spdx-json"
           output-file: "sbom.spdx.json"
+
+
+           # Semgrep'i default güvenlik kurallarıyla (OWASP benzeri) çalıştır
+      - name: Run Semgrep
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: p/default            # İstersen p/javascript p/typescript vb. yapabilirsin
+          generateSarif: true
+          sarifFile: semgrep.sarif
+          enable-metrics: false        # Telemetry kapalı (opsiyonel)
+
+      # Üretilen SARIF'i GitHub Security -> Code scanning alerts'e yükle
+      - name: Upload Semgrep SARIF to GitHub
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: semgrep.sarif
