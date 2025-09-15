@@ -34,7 +34,7 @@ jobs:
         run: |
           IMAGE=ghcr.io/${{ github.repository_owner }}/juice-shop:${{ github.sha }}
           echo "IMAGE=$IMAGE" >> $GITHUB_ENV
-          docker build -t "$IMAGE".
+          docker build -t "$IMAGE" .
 
       # (Opsiyonel) GHCR'a push etmek istersen
       - name: Login GHCR
@@ -50,7 +50,6 @@ jobs:
           path: .
           format: cyclonedx-json
           artifact-name: sbom-source.cdx.json
-          # İstersen GitHub Dependency Graph'a gönder:
           dependency-snapshot: true
 
       # 2) DOCKER İMAJI TARAMASI — imajdan SBOM (SPDX JSON)
