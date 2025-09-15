@@ -1,61 +1,32 @@
-name: Build & SBOM (Syft)
+name: Bogazici-DevSecOps-Pipeline
 
 on:
   push:
-    branches: [ "master" ]
+    branches:
+      - master
   pull_request:
-    branches: [ "master" ]
-
-# SBOM'ları artifact/release olarak yükleyebilmek için izinler
-permissions:
-  contents: write
-  actions: read
-  packages: write   # GHCR'a push edeceksen lazım
+    branches:
+      - master
+  workflow_dispatch: {}   # İstersen Actions > Run workflow ile manuel tetikleyebil
 
 jobs:
-  build-and-sbom:
+  build-and-syft:
+    name: Build & SBOM
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # (Opsiyonel) Node bağımlılıkları kur – kaynaktan SBOM alırken işe yarar
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: Install deps (npm ci)
-        run: npm ci
-
-      # Docker imajını build et (repo kökünde Dockerfile mevcut)
-      - name: Build image
+      # Docker imajını mevcut Dockerfile ile build et
+      - name: Build Docker image
         run: |
-          IMAGE=ghcr.io/${{ github.repository_owner }}/juice-shop:${{ github.sha }}
-          echo "IMAGE=$IMAGE" >> $GITHUB_ENV
-          docker build -t "$IMAGE" .
+          docker build -t juice-shop:${{ github.sha }} .
 
-      # (Opsiyonel) GHCR'a push etmek istersen
-      - name: Login GHCR
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
-      - name: Push image
-        run: docker push "$IMAGE"
-
-      # 1) KAYNAK KODU TARAMASI — klasörden SBOM (CycloneDX JSON)
-      - name: SBOM (source dir) with Syft
+      # Syft ile imajdan SPDX SBOM üret
+      - name: Syft SBOM Scan (image → SPDX)
         uses: anchore/sbom-action@v0
         with:
-          path: .
-          format: cyclonedx-json
-          artifact-name: sbom-source.cdx.json
-          dependency-snapshot: true
-
-      # 2) DOCKER İMAJI TARAMASI — imajdan SBOM (SPDX JSON)
-      - name: SBOM (container image) with Syft
-        uses: anchore/sbom-action@v0
-        with:
-          image: ${{ env.IMAGE }}
-          format: spdx-json
-          artifact-name: sbom-image.spdx.json
+          image: "juice-shop:${{ github.sha }}"
+          format: "spdx-json"
+          output-file: "sbom.spdx.json"
